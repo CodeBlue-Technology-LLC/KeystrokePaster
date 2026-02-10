@@ -10,6 +10,7 @@ namespace KeystrokePaster
         private ComboBox cmbModifier;
         private ComboBox cmbKey;
         private NumericUpDown numDelay;
+        private CheckBox chkLaunchOnStartup;
         private Button btnOK;
         private Button btnCancel;
 
@@ -23,7 +24,7 @@ namespace KeystrokePaster
         private void InitializeComponent()
         {
             this.Text = "Settings";
-            this.Size = new Size(350, 220);
+            this.Size = new Size(350, 250);
             this.StartPosition = FormStartPosition.CenterParent;
             this.FormBorderStyle = FormBorderStyle.FixedDialog;
             this.MaximizeBox = false;
@@ -66,9 +67,9 @@ namespace KeystrokePaster
                 Size = new Size(100, 25),
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
-            cmbKey.Items.AddRange(new object[] { 
-                "F1", "F2", "F3", "F4", "F5", "F6", 
-                "F7", "F8", "F9", "F10", "F11", "F12" 
+            cmbKey.Items.AddRange(new object[] {
+                "F1", "F2", "F3", "F4", "F5", "F6",
+                "F7", "F8", "F9", "F10", "F11", "F12"
             });
             this.Controls.Add(cmbKey);
 
@@ -105,11 +106,21 @@ namespace KeystrokePaster
             };
             this.Controls.Add(lblDelayDesc);
 
+            // Launch on startup checkbox
+            chkLaunchOnStartup = new CheckBox
+            {
+                Text = "Launch on Windows startup",
+                Location = new Point(20, 140),
+                Size = new Size(200, 20),
+                Font = new Font("Segoe UI", 9F)
+            };
+            this.Controls.Add(chkLaunchOnStartup);
+
             // OK button
             btnOK = new Button
             {
                 Text = "OK",
-                Location = new Point(150, 145),
+                Location = new Point(150, 175),
                 Size = new Size(75, 30),
                 DialogResult = DialogResult.OK
             };
@@ -120,7 +131,7 @@ namespace KeystrokePaster
             btnCancel = new Button
             {
                 Text = "Cancel",
-                Location = new Point(240, 145),
+                Location = new Point(240, 175),
                 Size = new Size(75, 30),
                 DialogResult = DialogResult.Cancel
             };
@@ -161,6 +172,9 @@ namespace KeystrokePaster
 
             // Load delay
             numDelay.Value = mainForm.KeystrokeDelay;
+
+            // Load launch on startup
+            chkLaunchOnStartup.Checked = mainForm.LaunchOnStartup;
         }
 
         private void BtnOK_Click(object sender, EventArgs e)
@@ -180,6 +194,44 @@ namespace KeystrokePaster
 
             // Save delay
             mainForm.KeystrokeDelay = (int)numDelay.Value;
+
+            // Save launch on startup
+            bool wasEnabled = mainForm.LaunchOnStartup;
+            mainForm.LaunchOnStartup = chkLaunchOnStartup.Checked;
+
+            // Update Windows registry for startup
+            if (mainForm.LaunchOnStartup != wasEnabled)
+            {
+                SetStartup(mainForm.LaunchOnStartup);
+            }
+        }
+
+        private void SetStartup(bool enable)
+        {
+            try
+            {
+                Microsoft.Win32.RegistryKey key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+                    @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", true);
+
+                if (enable)
+                {
+                    // Add to startup
+                    string exePath = System.Reflection.Assembly.GetExecutingAssembly().Location;
+                    key.SetValue("KeystrokePaster", exePath);
+                }
+                else
+                {
+                    // Remove from startup
+                    key.DeleteValue("KeystrokePaster", false);
+                }
+
+                key.Close();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to update startup settings: {ex.Message}", "Error",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
         }
     }
 }

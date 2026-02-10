@@ -15,6 +15,7 @@ namespace KeystrokePaster
         public Keys HotkeyKey { get; set; } = Keys.F1;
         public Keys HotkeyModifier { get; set; } = Keys.Control;
         public int KeystrokeDelay { get; set; } = 10; // milliseconds
+        public bool LaunchOnStartup { get; set; } = false;
         private const int HOTKEY_RELEASE_DELAY = 200; // ms to wait after hotkey
 
         public MainForm()
@@ -22,14 +23,32 @@ namespace KeystrokePaster
             InitializeComponent();
             InitializeTrayIcon();
             keystrokeSender = new KeystrokeSender();
+            LoadStartupSetting();
             RegisterHotkey();
+        }
+
+        private void LoadStartupSetting()
+        {
+            try
+            {
+                Microsoft.Win32.RegistryKey key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+                    @"SOFTWARE\Microsoft\Windows\CurrentVersion\Run", false);
+
+                object value = key?.GetValue("KeystrokePaster");
+                LaunchOnStartup = (value != null);
+                key?.Close();
+            }
+            catch
+            {
+                LaunchOnStartup = false;
+            }
         }
 
         private void InitializeTrayIcon()
         {
             trayIcon = new NotifyIcon
             {
-                Icon = SystemIcons.Application,
+                Icon = this.Icon,
                 Text = "Keystroke Paster",
                 Visible = true
             };
@@ -59,9 +78,7 @@ namespace KeystrokePaster
             {
                 this.Hide();
                 this.ShowInTaskbar = false;
-                trayIcon.BalloonTipTitle = "Keystroke Paster";
-                trayIcon.BalloonTipText = "Application minimized to tray";
-                trayIcon.ShowBalloonTip(1000);
+                // Balloon tip removed - no notification when minimizing
             }
         }
 
@@ -74,11 +91,16 @@ namespace KeystrokePaster
             }
         }
 
+        private void lblStatus_Click(object sender, EventArgs e)
+        {
+            // Empty event handler - added by designer
+        }
+
         private void BtnSettings_Click(object sender, EventArgs e)
         {
             // Temporarily disable TopMost so settings dialog shows on top
             this.TopMost = false;
-            
+
             using (SettingsForm settingsForm = new SettingsForm(this))
             {
                 if (settingsForm.ShowDialog() == DialogResult.OK)
@@ -87,7 +109,7 @@ namespace KeystrokePaster
                     RegisterHotkey();
                 }
             }
-            
+
             // Re-enable TopMost
             this.TopMost = true;
         }
@@ -109,7 +131,7 @@ namespace KeystrokePaster
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to register hotkey: {ex.Message}", "Error", 
+                MessageBox.Show($"Failed to register hotkey: {ex.Message}", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
@@ -163,11 +185,6 @@ namespace KeystrokePaster
                 lblStatus.Text = $"Status: {message}";
                 lblStatus.ForeColor = color;
             }
-        }
-
-        private void lblStatus_Click(object sender, EventArgs e)
-        {
-
         }
     }
 }
