@@ -25,6 +25,30 @@ namespace KeystrokePaster
             keystrokeSender = new KeystrokeSender();
             LoadStartupSetting();
             RegisterHotkey();
+            UpdateInstructionsText();
+        }
+
+        private void UpdateInstructionsText()
+        {
+            string modifier = GetModifierName(HotkeyModifier);
+            string key = HotkeyKey.ToString();
+            lblInstructions.Text = $"Paste text above, then press {modifier}+{key} in target window";
+        }
+
+        private string GetModifierName(Keys modifier)
+        {
+            if (modifier == Keys.Control)
+                return "Ctrl";
+            else if (modifier == Keys.Alt)
+                return "Alt";
+            else if (modifier == Keys.Shift)
+                return "Shift";
+            else if (modifier == (Keys.Control | Keys.Alt))
+                return "Ctrl+Alt";
+            else if (modifier == (Keys.Control | Keys.Shift))
+                return "Ctrl+Shift";
+            else
+                return modifier.ToString();
         }
 
         private void LoadStartupSetting()
@@ -48,7 +72,7 @@ namespace KeystrokePaster
         {
             trayIcon = new NotifyIcon
             {
-                Icon = this.Icon,
+                Icon = SystemIcons.Application,
                 Text = "Keystroke Paster",
                 Visible = true
             };
@@ -107,6 +131,8 @@ namespace KeystrokePaster
                 {
                     // Re-register hotkey with new settings
                     RegisterHotkey();
+                    // Update the instructions text to show new hotkey
+                    UpdateInstructionsText();
                 }
             }
 
@@ -116,12 +142,20 @@ namespace KeystrokePaster
 
         private void RegisterHotkey()
         {
-            // Unregister old hotkey
+            // Unregister old hotkey first
             if (hotkey != null)
             {
-                hotkey.Unregister();
-                hotkey.Dispose();
+                try
+                {
+                    hotkey.Unregister();
+                    hotkey.Dispose();
+                    hotkey = null;
+                }
+                catch { }
             }
+
+            // Small delay to ensure cleanup
+            System.Threading.Thread.Sleep(100);
 
             // Register new hotkey
             try
@@ -131,7 +165,7 @@ namespace KeystrokePaster
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Failed to register hotkey: {ex.Message}", "Error",
+                MessageBox.Show($"Failed to register hotkey: {ex.Message}\n\nTry a different hotkey combination.", "Error",
                     MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }

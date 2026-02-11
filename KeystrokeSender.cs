@@ -8,51 +8,18 @@ namespace KeystrokePaster
     public class KeystrokeSender
     {
         [DllImport("user32.dll")]
-        private static extern uint SendInput(uint nInputs, INPUT[] pInputs, int cbSize);
+        private static extern void keybd_event(byte bVk, byte bScan, uint dwFlags, UIntPtr dwExtraInfo);
 
         [DllImport("user32.dll")]
         private static extern short VkKeyScan(char ch);
 
-        private const int INPUT_KEYBOARD = 1;
-        private const uint KEYEVENTF_UNICODE = 0x0004;
+        [DllImport("user32.dll")]
+        private static extern uint MapVirtualKey(uint uCode, uint uMapType);
+
+        private const uint KEYEVENTF_EXTENDEDKEY = 0x0001;
         private const uint KEYEVENTF_KEYUP = 0x0002;
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct INPUT
-        {
-            public int type;
-            public INPUTUNION u;
-        }
-
-        [StructLayout(LayoutKind.Explicit)]
-        private struct INPUTUNION
-        {
-            [FieldOffset(0)]
-            public MOUSEINPUT mi;
-            [FieldOffset(0)]
-            public KEYBDINPUT ki;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct MOUSEINPUT
-        {
-            public int dx;
-            public int dy;
-            public uint mouseData;
-            public uint dwFlags;
-            public uint time;
-            public IntPtr dwExtraInfo;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        private struct KEYBDINPUT
-        {
-            public ushort wVk;
-            public ushort wScan;
-            public uint dwFlags;
-            public uint time;
-            public IntPtr dwExtraInfo;
-        }
+        private const uint KEYEVENTF_UNICODE = 0x0004;
+        private const uint KEYEVENTF_SCANCODE = 0x0008;
 
         public void SendText(string text, int delayMs)
         {
@@ -72,102 +39,65 @@ namespace KeystrokePaster
                 if (c == '\r')
                 {
                     // Send Enter key
-                    SendKeyPress(Keys.Return);
+                    SendKeyPress((byte)Keys.Return);
                 }
-                // Skip \n if it follows \r (Windows line ending)
                 return;
             }
             else if (c == '\t')
             {
                 // Send Tab key
-                SendKeyPress(Keys.Tab);
+                SendKeyPress((byte)Keys.Tab);
                 return;
             }
 
-            // Use Unicode input for all other characters
-            SendUnicodeChar(c);
+            // For regular characters, use VkKeyScan to get the virtual key code
+            short vkKeyScan = VkKeyScan(c);
+
+            if (vkKeyScan == -1)
+            {
+                // Character not in keyboard layout, use Unicode method
+                SendUnicodeChar(c);
+            }
+            else
+            {
+                byte vk = (byte)(vkKeyScan & 0xFF);
+                byte shiftState = (byte)(vkKeyScan >> 8);
+
+                // Press shift if needed
+                if ((shiftState & 1) != 0)
+                {
+                    keybd_event((byte)Keys.ShiftKey, 0, 0, UIntPtr.Zero);
+                    Thread.Sleep(10);
+                }
+
+                // Press and release the key
+                SendKeyPress(vk);
+
+                // Release shift if it was pressed
+                if ((shiftState & 1) != 0)
+                {
+                    Thread.Sleep(10);
+                    keybd_event((byte)Keys.ShiftKey, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
+                }
+            }
         }
 
         private void SendUnicodeChar(char c)
         {
-            INPUT[] inputs = new INPUT[2];
-
-            // Key down
-            inputs[0] = new INPUT
-            {
-                type = INPUT_KEYBOARD,
-                u = new INPUTUNION
-                {
-                    ki = new KEYBDINPUT
-                    {
-                        wVk = 0,
-                        wScan = c,
-                        dwFlags = KEYEVENTF_UNICODE,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-
-            // Key up
-            inputs[1] = new INPUT
-            {
-                type = INPUT_KEYBOARD,
-                u = new INPUTUNION
-                {
-                    ki = new KEYBDINPUT
-                    {
-                        wVk = 0,
-                        wScan = c,
-                        dwFlags = KEYEVENTF_UNICODE | KEYEVENTF_KEYUP,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-
-            SendInput(2, inputs, Marshal.SizeOf(typeof(INPUT)));
+            // Send key down
+            keybd_event(0, (byte)c, KEYEVENTF_UNICODE, UIntPtr.Zero);
+            Thread.Sleep(10);
+            // Send key up
+            keybd_event(0, (byte)c, KEYEVENTF_UNICODE | KEYEVENTF_KEYUP, UIntPtr.Zero);
         }
 
-        private void SendKeyPress(Keys key)
+        private void SendKeyPress(byte vk)
         {
-            INPUT[] inputs = new INPUT[2];
-
             // Key down
-            inputs[0] = new INPUT
-            {
-                type = INPUT_KEYBOARD,
-                u = new INPUTUNION
-                {
-                    ki = new KEYBDINPUT
-                    {
-                        wVk = (ushort)key,
-                        wScan = 0,
-                        dwFlags = 0,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-
+            keybd_event(vk, 0, 0, UIntPtr.Zero);
+            Thread.Sleep(10);
             // Key up
-            inputs[1] = new INPUT
-            {
-                type = INPUT_KEYBOARD,
-                u = new INPUTUNION
-                {
-                    ki = new KEYBDINPUT
-                    {
-                        wVk = (ushort)key,
-                        wScan = 0,
-                        dwFlags = KEYEVENTF_KEYUP,
-                        time = 0,
-                        dwExtraInfo = IntPtr.Zero
-                    }
-                }
-            };
-
-            SendInput(2, inputs, Marshal.SizeOf(typeof(INPUT)));
+            keybd_event(vk, 0, KEYEVENTF_KEYUP, UIntPtr.Zero);
         }
     }
 }
