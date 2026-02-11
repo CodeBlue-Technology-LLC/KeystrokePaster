@@ -21,6 +21,10 @@ namespace KeystrokePaster
         public MainForm()
         {
             InitializeComponent();
+
+            // Load icon from the executable itself
+            this.Icon = Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location);
+
             InitializeTrayIcon();
             keystrokeSender = new KeystrokeSender();
             LoadStartupSetting();
@@ -72,7 +76,7 @@ namespace KeystrokePaster
         {
             trayIcon = new NotifyIcon
             {
-                Icon = SystemIcons.Application,
+                Icon = this.Icon, // Use the form's icon (which should be set from embedded resource)
                 Text = "Keystroke Paster",
                 Visible = true
             };
