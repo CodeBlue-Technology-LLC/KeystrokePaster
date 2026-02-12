@@ -1,6 +1,6 @@
 # Keystroke Paster
 
-A Windows Forms application that sends text as keystrokes to any active window, useful for pasting into VMs, remote consoles, and applications where traditional paste doesn't work.
+A Windows Forms application that sends text as keystrokes to any active window, useful for pasting into VM Consoles, remote consoles, and applications where traditional paste doesn't work.
 
 ## Features
 
@@ -74,7 +74,7 @@ The Release build produces a single portable executable with no dependencies (re
 
 ## Use Cases
 
-- Pasting passwords into VMware/VirtualBox consoles
+- Pasting passwords into VMware ESX or VCSA/VirtualBox consoles
 - Sending commands to remote desktop sessions
 - Entering text into legacy applications
 - Bypassing clipboard restrictions
@@ -103,4 +103,4 @@ This tool works in ScreenConnect backstage and remote sessions. The single EXE c
 
 ## License
 
-Free to use and modify.
+See license.md
