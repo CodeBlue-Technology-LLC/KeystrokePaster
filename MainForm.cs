@@ -23,7 +23,14 @@ namespace KeystrokePaster
             InitializeComponent();
 
             // Load icon from the executable itself
-            this.Icon = Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            try
+            {
+                this.Icon = Icon.ExtractAssociatedIcon(System.Reflection.Assembly.GetExecutingAssembly().Location);
+            }
+            catch
+            {
+                // If icon fails to load, just use default
+            }
 
             InitializeTrayIcon();
             keystrokeSender = new KeystrokeSender();
@@ -83,18 +90,18 @@ namespace KeystrokePaster
 
             trayIcon.DoubleClick += (s, e) =>
             {
-                this.Show();
                 this.WindowState = FormWindowState.Normal;
                 this.ShowInTaskbar = true;
+                this.Activate();
             };
 
             // Context menu for tray icon
             ContextMenuStrip trayMenu = new ContextMenuStrip();
             trayMenu.Items.Add("Show", null, (s, e) =>
             {
-                this.Show();
                 this.WindowState = FormWindowState.Normal;
                 this.ShowInTaskbar = true;
+                this.Activate();
             });
             trayMenu.Items.Add("Exit", null, (s, e) => Application.Exit());
             trayIcon.ContextMenuStrip = trayMenu;
@@ -104,7 +111,7 @@ namespace KeystrokePaster
         {
             if (this.WindowState == FormWindowState.Minimized)
             {
-                this.Hide();
+                // Don't hide - just minimize to keep window handle active
                 this.ShowInTaskbar = false;
                 // Balloon tip removed - no notification when minimizing
             }
@@ -165,7 +172,6 @@ namespace KeystrokePaster
             try
             {
                 hotkey = new GlobalHotkey(HotkeyModifier, HotkeyKey, this);
-                hotkey.HotkeyPressed += Hotkey_Pressed;
             }
             catch (Exception ex)
             {
@@ -223,6 +229,30 @@ namespace KeystrokePaster
                 lblStatus.Text = $"Status: {message}";
                 lblStatus.ForeColor = color;
             }
+        }
+
+        protected override void OnHandleCreated(EventArgs e)
+        {
+            base.OnHandleCreated(e);
+
+            // Re-register hotkey with new handle
+            if (hotkey != null)
+            {
+                RegisterHotkey();
+            }
+        }
+
+        protected override void WndProc(ref Message m)
+        {
+            const int WM_HOTKEY = 0x0312;
+
+            if (m.Msg == WM_HOTKEY)
+            {
+                // Hotkey was pressed
+                Hotkey_Pressed(this, EventArgs.Empty);
+            }
+
+            base.WndProc(ref m);
         }
     }
 }
