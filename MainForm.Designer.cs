@@ -17,6 +17,7 @@ namespace KeystrokePaster
             if (disposing)
             {
                 hotkey?.Dispose();
+                clipboardHotkey?.Dispose();
                 trayIcon?.Dispose();
                 components?.Dispose();
             }
@@ -44,7 +45,7 @@ namespace KeystrokePaster
             // lblStatus
             // 
             this.lblStatus.Font = new System.Drawing.Font("Segoe UI", 9F, System.Drawing.FontStyle.Bold);
-            this.lblStatus.Location = new System.Drawing.Point(5, 203);
+            this.lblStatus.Location = new System.Drawing.Point(5, 214);
             this.lblStatus.Name = "lblStatus";
             this.lblStatus.Size = new System.Drawing.Size(300, 20);
             this.lblStatus.TabIndex = 1;
@@ -55,7 +56,7 @@ namespace KeystrokePaster
             this.btnSettings.Cursor = System.Windows.Forms.Cursors.Hand;
             this.btnSettings.FlatStyle = System.Windows.Forms.FlatStyle.Flat;
             this.btnSettings.Font = new System.Drawing.Font("Segoe UI", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.btnSettings.Location = new System.Drawing.Point(388, 181);
+            this.btnSettings.Location = new System.Drawing.Point(388, 198);
             this.btnSettings.Name = "btnSettings";
             this.btnSettings.Size = new System.Drawing.Size(43, 37);
             this.btnSettings.TabIndex = 2;
@@ -67,15 +68,15 @@ namespace KeystrokePaster
             // 
             this.lblInstructions.Font = new System.Drawing.Font("Segoe UI", 8F);
             this.lblInstructions.ForeColor = System.Drawing.Color.Gray;
-            this.lblInstructions.Location = new System.Drawing.Point(5, 185);
+            this.lblInstructions.Location = new System.Drawing.Point(5, 182);
             this.lblInstructions.Name = "lblInstructions";
-            this.lblInstructions.Size = new System.Drawing.Size(383, 17);
+            this.lblInstructions.Size = new System.Drawing.Size(383, 30);
             this.lblInstructions.TabIndex = 3;
-            this.lblInstructions.Text = "Paste text above, then press Ctrl+F1 in target window";
+            this.lblInstructions.Text = "Ctrl+F1 in target window types the box above\r\nCtrl+F2 types the clipboard directly";
             // 
             // MainForm
             // 
-            this.ClientSize = new System.Drawing.Size(435, 223);
+            this.ClientSize = new System.Drawing.Size(435, 240);
             this.Controls.Add(this.lblInstructions);
             this.Controls.Add(this.btnSettings);
             this.Controls.Add(this.lblStatus);

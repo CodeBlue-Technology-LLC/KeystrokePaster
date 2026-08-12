@@ -12,9 +12,11 @@ namespace KeystrokePaster
         [DllImport("user32.dll")]
         private static extern bool UnregisterHotKey(IntPtr hWnd, int id);
 
-        public const int HOTKEY_ID = 9000;
+        public const int HOTKEY_ID = 9000;          // types the text box
+        public const int HOTKEY_ID_CLIPBOARD = 9001; // types the clipboard
 
         private IntPtr handle;
+        private int hotkeyId;
         private bool registered = false;
 
         // Modifier key constants
@@ -24,8 +26,14 @@ namespace KeystrokePaster
         private const uint MOD_WIN = 0x0008;
 
         public GlobalHotkey(Keys modifiers, Keys key, Form parentForm)
+            : this(modifiers, key, parentForm, HOTKEY_ID)
+        {
+        }
+
+        public GlobalHotkey(Keys modifiers, Keys key, Form parentForm, int id)
         {
             handle = parentForm.Handle;
+            hotkeyId = id;
 
             // Convert modifiers
             uint mod = 0;
@@ -37,7 +45,7 @@ namespace KeystrokePaster
                 mod |= MOD_SHIFT;
 
             // Register the hotkey
-            registered = RegisterHotKey(handle, HOTKEY_ID, mod, (uint)key);
+            registered = RegisterHotKey(handle, hotkeyId, mod, (uint)key);
 
             if (!registered)
                 throw new InvalidOperationException("Failed to register hotkey. It may already be in use.");
@@ -47,7 +55,7 @@ namespace KeystrokePaster
         {
             if (registered)
             {
-                UnregisterHotKey(handle, HOTKEY_ID);
+                UnregisterHotKey(handle, hotkeyId);
                 registered = false;
             }
         }
